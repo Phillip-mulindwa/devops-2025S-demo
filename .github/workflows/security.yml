@@ -21,9 +21,12 @@ jobs:
       - name: Install Bandit
         run: pip install bandit
 
+      - name: Report all Bandit findings (non-blocking)
+        run: bandit -r . --exclude ./.venv,./venv,./node_modules --exit-zero
+
       - name: Run Bandit
-        run: bandit -r . --exclude ./.venv,./venv,./node_modules
-        continue-on-error: true
+        # gate: fails only on Medium+ severity and confidence; Low findings appear in the report above
+        run: bandit -r . --exclude ./.venv,./venv,./node_modules --severity-level medium --confidence-level medium
 
   secrets:
     name: Secrets (gitleaks)
@@ -53,8 +56,9 @@ jobs:
         with:
           image-ref: campus-notifier:${{ github.sha }}
           format: table
-          severity: HIGH,CRITICAL
-          exit-code: "0"
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
 
   iac:
     name: IaC (Checkov)
@@ -68,4 +72,4 @@ jobs:
           directory: .
           framework: terraform
           quiet: true
-          soft_fail: true
+          soft_fail: false
